@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+out/
+Obj/
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Publish
+publish/
+*.nupkg
+
+# OS noise
+.DS_Store
+Thumbs.db
