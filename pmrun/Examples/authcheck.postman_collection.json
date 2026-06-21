@@ -1,0 +1,24 @@
+{
+  "info": {
+    "name": "pmrun auth sample",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{bearertoken}}", "type": "string" } ] },
+  "item": [
+    {
+      "name": "Authorization header example",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "{{basicauth}}", "type": "default" },
+          { "key": "X-Environment", "value": "{{environmentName}}", "type": "default" }
+        ],
+        "url": { "raw": "https://httpbin.org/get", "host": [ "httpbin", "org" ], "path": [ "get" ] }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "environmentName", "value": "staging" },
+    { "key": "basicauth", "value": "" }
+  ]
+}

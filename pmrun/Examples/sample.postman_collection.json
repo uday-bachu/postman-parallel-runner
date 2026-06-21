@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "pmrun sample",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public GET requests",
+      "item": [
+        {
+          "name": "Get UUID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "https://httpbin.org/uuid" }
+          }
+        },
+        {
+          "name": "Get IP address",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "https://httpbin.org/ip" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post sample JSON",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"message\":\"Hello, {{name}}\",\"source\":\"pmrun sample\"}"
+        },
+        "url": { "raw": "https://httpbin.org/anything" }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "name", "value": "world" }
+  ]
+}

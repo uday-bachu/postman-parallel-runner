@@ -1,0 +1,11 @@
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\bin\Debug\net8.0\PmFolderRunner.Core.deps.json
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\bin\Debug\net8.0\PmFolderRunner.Core.dll
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\bin\Debug\net8.0\PmFolderRunner.Core.pdb
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.AssemblyInfoInputs.cache
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.AssemblyInfo.cs
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.csproj.CoreCompileInputs.cache
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.dll
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\refint\PmFolderRunner.Core.dll
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\PmFolderRunner.Core.pdb
+C:\Users\Rajasekhar Reddy\OneDrive\Documents\uday\pmrun\src\PmFolderRunner.Core\obj\Debug\net8.0\ref\PmFolderRunner.Core.dll
