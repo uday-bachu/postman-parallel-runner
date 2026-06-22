@@ -123,13 +123,12 @@ internal sealed class Options
     {
         var lines = new[]
         {
-            "pmrun - run a Postman collection's requests in parallel.",
+            "usalvo - run a Postman collection's requests in parallel.",
             "",
             "USAGE",
-            "  pmrun <collection.json> [options]",
+            "  usalvo <collection.json> [options]",
             "",
             "OPTIONS",
-            "  --baseurl <url>        Value for {{baseurl}} (or env PM_BASEURL).",
             "  --token <token>        Bearer token (or env PM_TOKEN). Prompted if omitted.",
             "  --var NAME=VALUE       Extra variable; repeatable (or env PM_VAR_<NAME>).",
             "  -e, --environment <f>  Postman environment JSON file (reads its values[] array).",

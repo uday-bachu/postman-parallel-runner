@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>usalvo</id>
+    <version>1.0.0</version>
+    <authors>uday-bachu</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/uday-bachu/postman-parallel-runner</projectUrl>
+    <description>Run a Postman collection's requests in parallel and print a compact pass/fail summary.</description>
+    <tags>postman api cli testing parallel newman</tags>
+    <packageTypes>
+      <packageType name="DotnetTool" />
+    </packageTypes>
+    <repository type="git" url="https://github.com/uday-bachu/postman-parallel-runner" commit="8f283f03adda920cf42ba844fc22907744ea7142" />
+  </metadata>
+</package>
