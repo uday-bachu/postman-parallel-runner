@@ -65,7 +65,11 @@ public static class RequestExecutor
         if (snippet.Length > SnippetChars)
             snippet = snippet[..SnippetChars];
 
-        return new RequestResult(name, folder, status, stopwatch.Elapsed.TotalMilliseconds, snippet);
+        var expectedStatus = entry["_expectedStatus"] is JsonValue ev
+            && ev.TryGetValue<int>(out var es) ? es : (int?)null;
+
+        return new RequestResult(name, folder, status, stopwatch.Elapsed.TotalMilliseconds,
+            snippet, expectedStatus);
     }
 
     private static async Task<string> ReadSnippetAsync(HttpResponseMessage response, CancellationToken ct)
@@ -98,3 +102,4 @@ public static class RequestExecutor
         return BearerToken.Replace(text, "Bearer ***REDACTED***");
     }
 }
+

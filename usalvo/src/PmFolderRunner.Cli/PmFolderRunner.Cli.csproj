@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -14,7 +14,7 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>usalvo</ToolCommandName>
 		<PackageId>usalvo</PackageId>
-		<Version>1.0.0</Version>
+		<Version>1.1.0</Version>
 
 		<!-- Metadata shown on nuget.org -->
 		<Authors>uday-bachu</Authors>
@@ -29,7 +29,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\PmFolderRunner.Core\PmFolderRunner.Core.csproj" />
 	</ItemGroup>
-
+		
 	<ItemGroup>
 		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>

@@ -12,7 +12,8 @@ internal sealed class Options
     public string? BaseUrl { get; private set; }
     public string? Token { get; private set; }
     public List<(string Key, string Value)> Vars { get; } = new();
-    public int Workers { get; private set; }
+    public int Workers { get; private set; } = 50;
+    public bool Burst { get; private set; }
     public double Timeout { get; private set; } = 30;
     public bool Insecure { get; private set; }
     public string? EnvironmentPath { get; private set; }
@@ -20,6 +21,10 @@ internal sealed class Options
     public bool OutputJson { get; private set; }
     public int Iterations { get; private set; } = 1;
     public bool ShowHelp { get; private set; }
+
+    // Tracks whether --workers was explicitly provided, so --burst can reject the
+    // combination without being fooled by the default value.
+    private bool _workersSet;
 
     public static Options Parse(string[] args)
     {
@@ -61,7 +66,10 @@ internal sealed class Options
                     var workersRaw = RequireValue(args, ref i, arg);
                     if (!int.TryParse(workersRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var workers))
                         throw new ArgumentException($"--workers expects an integer, got: {workersRaw}");
+                    if (workers < 1)
+                        throw new ArgumentException("--workers must be 1 or greater. Use --burst to fire all requests at once.");
                     options.Workers = workers;
+                    options._workersSet = true;
                     break;
 
                 case "--timeout":
@@ -73,6 +81,10 @@ internal sealed class Options
 
                 case "--insecure":
                     options.Insecure = true;
+                    break;
+
+                case "--burst":
+                    options.Burst = true;
                     break;
 
                 case "--json":
@@ -109,6 +121,9 @@ internal sealed class Options
             }
         }
 
+        if (options.Burst && options._workersSet)
+            throw new ArgumentException("--burst and --workers cannot be used together.");
+
         return options;
     }
 
@@ -133,7 +148,9 @@ internal sealed class Options
             "  --var NAME=VALUE       Extra variable; repeatable (or env PM_VAR_<NAME>).",
             "  -e, --environment <f>  Postman environment JSON file (reads its values[] array).",
             "  -g, --globals <f>      Postman globals JSON file (reads its values[] array).",
-            "  --workers <n>          Max concurrent requests. 0 = all at once (default).",
+            "  --workers <n>          Max concurrent requests. Must be 1 or greater. Default 50.",
+            "  --burst                Fire all requests at once. Ignores --workers.",
+            "                         Warning: large collections may exhaust ephemeral ports.",
             "  --timeout <seconds>    Per-request timeout. Default 30.",
             "  --insecure             Skip TLS certificate verification.",
             "  --json                 Output results as JSON to stdout (suppresses console table).",

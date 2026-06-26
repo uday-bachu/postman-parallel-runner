@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace PmFolderRunner.Core;
 
@@ -55,11 +56,48 @@ public static class CollectionLoader
             {
                 // Stamp the folder path onto the item so RequestExecutor can read it.
                 obj["_folderPath"] = JsonValue.Create(folderPath);
+
+                // Stamp the expected status pulled from the test script, if any, so
+                // the runner can mark the request pass or fail.
+                var expected = ExtractExpectedStatus(obj);
+                if (expected is not null)
+                    obj["_expectedStatus"] = JsonValue.Create(expected.Value);
+
                 result.Add(obj);
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Pulls the first three-digit HTTP status code (1xx–5xx) out of a request's
+    /// "test" event script, if it has one. That code is treated as the expected
+    /// status so the runner can mark the request pass or fail. Returns null when the
+    /// item has no test script or the script contains no status code.
+    /// </summary>
+    private static int? ExtractExpectedStatus(JsonObject item)
+    {
+        if (item["event"] is not JsonArray events)
+            return null;
+
+        foreach (var node in events)
+        {
+            if (node is not JsonObject ev) continue;
+            if (ev["listen"].Str() != "test") continue;
+
+            var execArray = ev["script"]?["exec"] as JsonArray;
+            if (execArray is null) continue;
+
+            var scriptText = string.Join("\n",
+                execArray.Select(x => x.Str() ?? string.Empty));
+
+            var match = Regex.Match(scriptText, @"\b([1-5]\d{2})\b");
+            if (match.Success)
+                return int.Parse(match.Groups[1].Value);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -106,3 +144,4 @@ public static class CollectionLoader
         }
     }
 }
+

@@ -23,16 +23,22 @@ public static class ConsoleReporter
         var ordered = results.OrderBy(r => r.Name, StringComparer.Ordinal).ToList();
 
         Console.WriteLine();
-        Console.WriteLine($"{"",-6} {"STATUS",-7} {"TIME(ms)",9}  {"REQUEST",-45}");
+        Console.WriteLine($"{"RESULT",-7} {"STATUS",-7} {"TIME(ms)",9}  {"REQUEST",-57}");
         Console.WriteLine(new string('-', Width));
 
         foreach (var r in ordered)
         {
-            // A leading PASS/FAIL label makes the table scannable without ANSI colour.
-            var label = r.IsUnder400 ? "PASS" : "FAIL";
-            Console.WriteLine($"{label,-6} {r.Status,-7} {r.Ms,9:0}  {Truncate(r.Name, 45),-45}");
+            var verdict = r.Passed switch
+            {
+                true => "PASS",
+                false => "FAIL",
+                _ => "-",
+            };
 
-            if (!r.IsSuccess)
+            Console.WriteLine($"{verdict,-7} {r.Status,-7} {r.Ms,9:0}  {Truncate(r.Name, 57),-57}");
+
+            var showDetail = r.IsNetworkError || (r.Status is int code && code >= 300) || r.Passed == false;
+            if (showDetail)
             {
                 // Show folder context so ambiguous (same-named) requests are clear.
                 if (!string.IsNullOrEmpty(r.Folder))
@@ -59,21 +65,18 @@ public static class ConsoleReporter
 
         Console.WriteLine();
         Console.WriteLine($"Aggregated over {iterations} iteration(s):");
-        Console.WriteLine($"{"REQUEST",-55} {"RUNS",5} {"PASS",5} {"FAIL",5} {"AVG(ms)",9}");
+        Console.WriteLine($"{"REQUEST",-62} {"RUNS",5} {"FAIL",5} {"ERR",5} {"AVG(ms)",9}");
         Console.WriteLine(new string('-', Width));
 
         foreach (var g in groups)
         {
-            var total  = g.Count();
-            var passed = g.Count(r => r.IsUnder400);
-            var failed = total - passed;
-            var avgMs  = g.Average(r => r.Ms);
-
-            var allPassed = failed == 0;
-            var label     = allPassed ? "    " : "FAIL";
+            var total    = g.Count();
+            var failures = g.Count(r => r.Passed == false);
+            var errors   = g.Count(r => r.IsNetworkError);
+            var avgMs    = g.Average(r => r.Ms);
 
             Console.WriteLine(
-                $"{label} {Truncate(g.Key, 50),-50} {total,5} {passed,5} {failed,5} {avgMs,9:0}");
+                $"{Truncate(g.Key, 62),-62} {total,5} {failures,5} {errors,5} {avgMs,9:0}");
         }
 
         Console.WriteLine(new string('-', Width));
@@ -81,18 +84,19 @@ public static class ConsoleReporter
 
     public static void PrintSummary(IReadOnlyList<RequestResult> results, double wallSeconds)
     {
-        var under400 = results.Count(r => r.IsUnder400);
-        var failures = results.Count - under400;
+        var passed = results.Count(r => r.Passed == true);
+        var failed = results.Count(r => r.Passed == false);
+        var networkErrors = results.Count(r => r.IsNetworkError);
         var bar = new string('#', Width);
 
         Console.WriteLine();
         Console.WriteLine(bar);
         Console.WriteLine(
-            $"RUN COMPLETE | Requests: {results.Count} | " +
-            $"Under-400: {under400} | Failures/ERR: {failures} | Total wall: {wallSeconds:0.00}s");
+            $"RUN COMPLETE | Requests: {results.Count} | PASS: {passed} | FAIL: {failed} | ERR: {networkErrors} | Total wall: {wallSeconds:0.00}s");
         Console.WriteLine(bar);
     }
 
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..max];
 }
+

@@ -5,7 +5,8 @@ collection's requests in parallel and printing a compact summary.
 
 It is intentionally lightweight. The tool sends each request as defined in the collection, applies
 variable substitution, and reports status codes, timings, and short response snippets. It does not
-execute Postman pre-request scripts or test scripts.
+execute Postman pre-request or test scripts, but it can read a single expected HTTP status code out
+of a request's test script and mark that request pass or fail against the actual response.
 
 ## When it is useful
 
@@ -13,11 +14,11 @@ execute Postman pre-request scripts or test scripts.
 request at a time. Reach for it when:
 
 - you want a suite of independent requests to finish in roughly the time of the slowest single
-  request, not the sum of them all — Newman runs sequentially, `usalvo` fans them out across workers
+  request, not the sum of them all ï¿½ Newman runs sequentially, `usalvo` fans them out across workers
 - you need quick concurrent load on your endpoints: combine `--workers` and `--iterations` to replay
   the collection many times at a controlled concurrency cap
-- you are hunting concurrency-sensitive failures — rate limiting, connection-pool exhaustion, race
-  conditions — that never surface when requests run strictly in series
+- you are hunting concurrency-sensitive failures ï¿½ rate limiting, connection-pool exhaustion, race
+  conditions ï¿½ that never surface when requests run strictly in series
 - you want a single parallel pass/fail sweep over many health, status, or lookup endpoints in CI,
   with no Newman or extra packages to install
 
@@ -27,8 +28,26 @@ request at a time. Reach for it when:
 them in one batch. Folder structure is preserved only as display context; it does not control
 execution order.
 
-If you pass `--workers 0`, all requests are fired at once.  
-### If you pass a positive number, that value is used as the concurrency cap.
+By default, up to 50 requests run concurrently. Pass `--workers <n>` to set a different cap; the
+value must be 1 or greater. To fire every request at once with no cap, use `--burst` â€” handy for a
+deliberate load spike, though large collections may exhaust ephemeral ports. `--workers` and
+`--burst` cannot be combined.
+
+## Pass/fail and exit codes
+
+If a request's test script contains an HTTP status code â€” the first three-digit `1xx`â€“`5xx` number
+found anywhere in the script text â€” `usalvo` treats it as the expected status and compares it
+against the actual response:
+
+- match â†’ the request is marked `PASS`
+- mismatch â†’ the request is marked `FAIL`
+- no status code in the script (or no test script at all) â†’ no verdict, shown as `-`
+
+A network error (`ERR`) always counts as a failure, whether or not a status code was declared.
+
+The process exit code reflects the run: `usalvo` exits `1` if any request is `FAIL` or `ERR`, and
+`0` only when every request either passed or had no assertion. This makes it usable as a CI gate.
+With `--json`, each result carries a `passed` field that is `true`, `false`, or `null` (no verdict).
 
 ## Requirements
 
@@ -95,7 +114,9 @@ usalvo <collection.json> [options]
   --var NAME=VALUE        Set a variable; repeatable (or env PM_VAR_<NAME>).
   -e, --environment <f>   Postman environment JSON file (reads its values[] array).
   -g, --globals <f>       Postman globals JSON file (reads its values[] array).
-  --workers <n>           Max concurrent requests. 0 = all at once (default).
+  --workers <n>           Max concurrent requests. Must be 1 or greater. Default 50.
+  --burst                 Fire all requests at once, ignoring --workers.
+                          Large collections may exhaust ephemeral ports.
   --timeout <seconds>     Per-request timeout. Default 30.
   --insecure              Skip TLS certificate verification.
   --json                  Output results as JSON to stdout (suppresses console table).
@@ -162,10 +183,26 @@ usalvo .\OrderApi.postman_collection.json `
   --timeout 20
 ```
 
+Fire every request at once for a deliberate load spike:
+
+bash:
+
+```bash
+usalvo ./sample.postman_collection.json \
+  --burst
+```
+
+PowerShell:
+
+```powershell
+usalvo .\sample.postman_collection.json `
+  --burst
+```
+
 ## Variables
 
 Variables fill `{{placeholder}}` tokens in URLs, headers, and raw bodies. Every value the tool
-needs comes through the same generic mechanism — there are no special-cased variable names. You can
+needs comes through the same generic mechanism ï¿½ there are no special-cased variable names. You can
 supply a value from any of the sources below, and when the same key appears in more than one source,
 the highest-precedence value wins.
 
@@ -179,7 +216,7 @@ the highest-precedence value wins.
 
 For example, a `{{host}}` placeholder in your collection can be filled with
 `--var host=https://staging.example.com`, with `PM_VAR_HOST=...` in the environment, or from a
-Postman environment file — whichever has higher precedence wins.
+Postman environment file ï¿½ whichever has higher precedence wins.
 
 Environment and globals files are read from the standard Postman export format: a `values` array
 containing `{ "key": ..., "value": ..., "enabled": ... }` entries. Disabled values are skipped.
@@ -230,13 +267,16 @@ usalvo .\ProtectedApi.postman_collection.json `
 - Per-request timeout handling
 - Optional TLS verification bypass
 - Redaction of bearer tokens in printed response snippets
+- Expected-status extraction from test scripts, with per-request PASS/FAIL and a matching exit code
+- Bounded concurrency (default 50 workers) with an opt-in `--burst` mode for firing all at once
 
 ## Current limitations
 
 - Only bearer auth is handled automatically
 - Only raw body mode is supported
-- Postman pre-request and test scripts are not executed
-- The tool reports request outcomes, not assertion results
+- Postman pre-request and test scripts are not executed; only a single expected HTTP status code is
+  read out of each test script
+- Assertions beyond status code (response body, headers, timing) are not evaluated
 
 ## Build from source
 

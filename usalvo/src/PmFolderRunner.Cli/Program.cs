@@ -138,9 +138,12 @@ internal static class Program
         }
 
         // --- HTTP client -----------------------------------------------------
+        // Resolve the concurrency cap once and align the socket pool with it.
+        var maxWorkers = BatchRunner.ResolveWorkerCount(options.Workers, requests.Count, options.Burst);
+
         using var handler = new HttpClientHandler
         {
-            MaxConnectionsPerServer = int.MaxValue,
+            MaxConnectionsPerServer = maxWorkers,
         };
         if (options.Insecure)
             handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
@@ -153,8 +156,6 @@ internal static class Program
         };
 
         // --- Run -------------------------------------------------------------
-        var maxWorkers = BatchRunner.ResolveWorkerCount(options.Workers, requests.Count);
-
         // In --json mode the banner/table are suppressed so stdout stays machine-readable.
         if (!options.OutputJson)
             ConsoleReporter.PrintRunHeader(options.CollectionPath, requests.Count, maxWorkers);
@@ -177,7 +178,7 @@ internal static class Program
                 resolver,
                 token,
                 collectionBearer,
-                options.Workers,
+                maxWorkers,
                 options.Timeout);
 
             perIteration.Add(batch);
@@ -206,7 +207,8 @@ internal static class Program
             ConsoleReporter.PrintSummary(allResults, stopwatch.Elapsed.TotalSeconds);
         }
 
-        return 0;
+        var anyFailure = allResults.Any(r => r.IsNetworkError || r.Passed == false);
+        return anyFailure ? 1 : 0;
     }
 
     private static object BuildSingleRunJson(
@@ -220,15 +222,14 @@ internal static class Program
             workers = maxWorkers,
             wallMs = (long)stopwatch.Elapsed.TotalMilliseconds,
             totalRequests = results.Count,
-            passed = results.Count(r => r.IsUnder400),
-            failed = results.Count(r => !r.IsUnder400),
+            networkErrors = results.Count(r => r.IsNetworkError),
             results = results.Select(r => new
             {
                 name = r.Name,
                 folder = r.Folder,
                 status = r.Status,
+                passed = r.Passed,   // serializes as true / false / null
                 ms = (long)r.Ms,
-                passed = r.IsUnder400,
                 snippet = r.Snippet,
             }),
         };
@@ -251,8 +252,8 @@ internal static class Program
                     name = r.Name,
                     folder = r.Folder,
                     status = r.Status,
+                    passed = r.Passed,   // serializes as true / false / null
                     ms = (long)r.Ms,
-                    passed = r.IsUnder400,
                     snippet = r.Snippet,
                 });
             }
@@ -265,8 +266,7 @@ internal static class Program
             {
                 qualifiedName = g.Key,
                 totalRuns = g.Count(),
-                passed = g.Count(r => r.IsUnder400),
-                failed = g.Count(r => !r.IsUnder400),
+                errCount = g.Count(r => r.IsNetworkError),
                 avgMs = (long)Math.Round(g.Average(r => r.Ms)),
             });
 
@@ -278,10 +278,10 @@ internal static class Program
             wallMs = (long)stopwatch.Elapsed.TotalMilliseconds,
             iterations = options.Iterations,
             totalRequests = allResults.Count,
-            passed = allResults.Count(r => r.IsUnder400),
-            failed = allResults.Count(r => !r.IsUnder400),
+            networkErrors = allResults.Count(r => r.IsNetworkError),
             results,
             aggregated,
         };
     }
 }
+
