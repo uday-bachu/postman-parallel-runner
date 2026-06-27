@@ -1,11 +1,16 @@
 # usalvo
 
-`usalvo` is a small, dependency-free .NET CLI for running a [Postman](https://www.postman.com/)
-collection's requests in parallel and printing a compact summary.
+`usalvo` is a small, dependency-free .NET global tool that runs a [Postman](https://www.postman.com/)
+collection's requests concurrently, evaluates per-request pass/fail verdicts — usable as a CI gate with no Newman or extra packages needed.
 
-It is intentionally lightweight. The tool sends each request as defined in the collection, applies
-variable substitution, and reports status codes, timings, and short response snippets. It does not
-execute Postman pre-request scripts or test scripts.
+It is intentionally lightweight. Each request is sent exactly as defined in the collection:
+`{{placeholder}}` variables are substituted in URLs, headers, and raw bodies; bearer auth is injected
+automatically from `--token` or `PM_TOKEN`; and each result records the HTTP status code, elapsed
+time, and a short response snippet. Pre-request and test scripts are not executed — instead, `usalvo`
+reads the first HTTP status code found in each request's test script and uses it as the expected
+status, marking the request `PASS`, `FAIL`, or `-` (no assertion declared). Results can be emitted
+as structured JSON with `--json`, and the whole collection can be replayed N times with
+`--iterations` for light load or stress testing.
 
 ## When it is useful
 
@@ -27,8 +32,26 @@ request at a time. Reach for it when:
 them in one batch. Folder structure is preserved only as display context; it does not control
 execution order.
 
-If you pass `--workers 0`, all requests are fired at once.  
-### If you pass a positive number, that value is used as the concurrency cap.
+By default, up to 50 requests run concurrently. Pass `--workers <n>` to set a different cap; the
+value must be 1 or greater. To fire every request at once with no cap, use `--burst` — handy for a
+deliberate load spike, though large collections may exhaust ephemeral ports. `--workers` and
+`--burst` cannot be combined.
+
+## Pass/fail and exit codes
+
+If a request's test script contains an HTTP status code — the first three-digit `1xx`–`5xx` number
+found anywhere in the script text — `usalvo` treats it as the expected status and compares it
+against the actual response:
+
+- match → the request is marked `PASS`
+- mismatch → the request is marked `FAIL`
+- no status code in the script (or no test script at all) → no verdict, shown as `-`
+
+A network error (`ERR`) always counts as a failure, whether or not a status code was declared.
+
+The process exit code reflects the run: `usalvo` exits `1` if any request is `FAIL` or `ERR`, and
+`0` only when every request either passed or had no assertion. This makes it usable as a CI gate.
+With `--json`, each result carries a `passed` field that is `true`, `false`, or `null` (no verdict).
 
 ## Requirements
 
@@ -95,7 +118,9 @@ usalvo <collection.json> [options]
   --var NAME=VALUE        Set a variable; repeatable (or env PM_VAR_<NAME>).
   -e, --environment <f>   Postman environment JSON file (reads its values[] array).
   -g, --globals <f>       Postman globals JSON file (reads its values[] array).
-  --workers <n>           Max concurrent requests. 0 = all at once (default).
+  --workers <n>           Max concurrent requests. Must be 1 or greater. Default 50.
+  --burst                 Fire all requests at once, ignoring --workers.
+                          Large collections may exhaust ephemeral ports.
   --timeout <seconds>     Per-request timeout. Default 30.
   --insecure              Skip TLS certificate verification.
   --json                  Output results as JSON to stdout (suppresses console table).
@@ -160,6 +185,22 @@ usalvo .\OrderApi.postman_collection.json `
   --var environmentName=staging `
   --workers 8 `
   --timeout 20
+```
+
+Fire every request at once for a deliberate load spike:
+
+bash:
+
+```bash
+usalvo ./sample.postman_collection.json \
+  --burst
+```
+
+PowerShell:
+
+```powershell
+usalvo .\sample.postman_collection.json `
+  --burst
 ```
 
 ## Variables
@@ -230,13 +271,16 @@ usalvo .\ProtectedApi.postman_collection.json `
 - Per-request timeout handling
 - Optional TLS verification bypass
 - Redaction of bearer tokens in printed response snippets
+- Expected-status extraction from test scripts, with per-request PASS/FAIL and a matching exit code
+- Bounded concurrency (default 50 workers) with an opt-in `--burst` mode for firing all at once
 
 ## Current limitations
 
 - Only bearer auth is handled automatically
 - Only raw body mode is supported
-- Postman pre-request and test scripts are not executed
-- The tool reports request outcomes, not assertion results
+- Postman pre-request and test scripts are not executed; only a single expected HTTP status code is
+  read out of each test script
+- Assertions beyond status code (response body, headers, timing) are not evaluated
 
 ## Build from source
 

@@ -1,12 +1,16 @@
 # usalvo
 
-`usalvo` is a small, dependency-free .NET CLI for running a [Postman](https://www.postman.com/)
-collection's requests in parallel and printing a compact summary.
+`usalvo` is a small, dependency-free .NET global tool that runs a [Postman](https://www.postman.com/)
+collection's requests concurrently, evaluates per-request pass/fail verdicts — usable as a CI gate with no Newman or extra packages needed.
 
-It is intentionally lightweight. The tool sends each request as defined in the collection, applies
-variable substitution, and reports status codes, timings, and short response snippets. It does not
-execute Postman pre-request or test scripts, but it can read a single expected HTTP status code out
-of a request's test script and mark that request pass or fail against the actual response.
+It is intentionally lightweight. Each request is sent exactly as defined in the collection:
+`{{placeholder}}` variables are substituted in URLs, headers, and raw bodies; bearer auth is injected
+automatically from `--token` or `PM_TOKEN`; and each result records the HTTP status code, elapsed
+time, and a short response snippet. Pre-request and test scripts are not executed — instead, `usalvo`
+reads the first HTTP status code found in each request's test script and uses it as the expected
+status, marking the request `PASS`, `FAIL`, or `-` (no assertion declared). Results can be emitted
+as structured JSON with `--json`, and the whole collection can be replayed N times with
+`--iterations` for light load or stress testing.
 
 ## When it is useful
 
@@ -14,11 +18,11 @@ of a request's test script and mark that request pass or fail against the actual
 request at a time. Reach for it when:
 
 - you want a suite of independent requests to finish in roughly the time of the slowest single
-  request, not the sum of them all � Newman runs sequentially, `usalvo` fans them out across workers
+  request, not the sum of them all — Newman runs sequentially, `usalvo` fans them out across workers
 - you need quick concurrent load on your endpoints: combine `--workers` and `--iterations` to replay
   the collection many times at a controlled concurrency cap
-- you are hunting concurrency-sensitive failures � rate limiting, connection-pool exhaustion, race
-  conditions � that never surface when requests run strictly in series
+- you are hunting concurrency-sensitive failures — rate limiting, connection-pool exhaustion, race
+  conditions — that never surface when requests run strictly in series
 - you want a single parallel pass/fail sweep over many health, status, or lookup endpoints in CI,
   with no Newman or extra packages to install
 
@@ -202,7 +206,7 @@ usalvo .\sample.postman_collection.json `
 ## Variables
 
 Variables fill `{{placeholder}}` tokens in URLs, headers, and raw bodies. Every value the tool
-needs comes through the same generic mechanism � there are no special-cased variable names. You can
+needs comes through the same generic mechanism — there are no special-cased variable names. You can
 supply a value from any of the sources below, and when the same key appears in more than one source,
 the highest-precedence value wins.
 
@@ -216,7 +220,7 @@ the highest-precedence value wins.
 
 For example, a `{{host}}` placeholder in your collection can be filled with
 `--var host=https://staging.example.com`, with `PM_VAR_HOST=...` in the environment, or from a
-Postman environment file � whichever has higher precedence wins.
+Postman environment file — whichever has higher precedence wins.
 
 Environment and globals files are read from the standard Postman export format: a `values` array
 containing `{ "key": ..., "value": ..., "enabled": ... }` entries. Disabled values are skipped.

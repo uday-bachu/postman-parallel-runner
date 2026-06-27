@@ -14,6 +14,8 @@ Obj/
 # Publish
 publish/
 *.nupkg
+# NuGet
+nupkg/
 
 # OS noise
 .DS_Store

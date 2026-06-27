@@ -14,7 +14,7 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>usalvo</ToolCommandName>
 		<PackageId>usalvo</PackageId>
-		<Version>1.1.0</Version>
+		<Version>1.1.1</Version>
 
 		<!-- Metadata shown on nuget.org -->
 		<Authors>uday-bachu</Authors>
